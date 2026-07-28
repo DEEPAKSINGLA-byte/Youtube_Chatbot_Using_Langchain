@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube RAG</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>YouTube RAG Chatbot</h1>
+
+        <div class="card">
+
+            <label>Video ID</label>
+
+            <input
+                type="text"
+                id="video"
+                placeholder="Enter YouTube Video ID">
+
+            <label>Question</label>
+
+            <textarea
+                id="question"
+                rows="5"
+                placeholder="Ask anything about the video"></textarea>
+
+            <button id="ask-btn">
+                Ask
+            </button>
+
+        </div>
+
+        <div class="answer-card">
+
+            <h2>Answer</h2>
+
+            <p id="answer">
+                Your answer will appear here.
+            </p>
+
+        </div>
+
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
+
+</html>
