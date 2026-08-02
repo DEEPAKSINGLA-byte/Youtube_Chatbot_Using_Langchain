@@ -1,5 +1,32 @@
+# Python
 __pycache__/
 *.py[cod]
-.env
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
 venv/
 .venv/
+env/
+
+# Local environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Flask/local runtime
+instance/
+*.log
+
+# Build/test/cache output
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+*.egg-info/
+
+# Local vector stores or generated indexes
+*.faiss
+*.pkl
