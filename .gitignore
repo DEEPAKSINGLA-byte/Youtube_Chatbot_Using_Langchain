@@ -26,6 +26,7 @@ instance/
 build/
 dist/
 *.egg-info/
+youtube-rag-bot.tar
 
 # Local vector stores or generated indexes
 *.faiss

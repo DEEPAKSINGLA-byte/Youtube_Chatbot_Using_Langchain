@@ -1,0 +1,13 @@
+{
+    "ROS2.distro": "humble",
+    "python.autoComplete.extraPaths": [
+        "/home/deepak/moveit_ws/build/moveit_configs_utils",
+        "/home/deepak/moveit_ws/install/moveit_configs_utils/lib/python3.10/site-packages",
+        "/home/deepak/rovercore/install/armmoveit/local/lib/python3.10/dist-packages",
+        "/home/deepak/ros2_ws/install/ros_ign_interfaces/local/lib/python3.10/dist-packages",
+        "/home/deepak/ros2_ws/install/ros_gz_interfaces/local/lib/python3.10/dist-packages",
+        "/home/deepak/ros_gz/install/ros_gz_interfaces/local/lib/python3.10/dist-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ]
+}
