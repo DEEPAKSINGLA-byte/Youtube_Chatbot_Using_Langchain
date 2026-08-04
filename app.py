@@ -1,5 +1,7 @@
 import logging
 import os
+import re
+from urllib.parse import parse_qs, urlparse
 
 from flask import Flask, jsonify, render_template, request
 
@@ -14,6 +16,8 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
+YOUTUBE_ID_PATTERN = re.compile(r"^[A-Za-z0-9_-]{11}$")
+
 
 def get_requested_language(data):
     """Return a supported language code from request JSON."""
@@ -25,6 +29,49 @@ def get_requested_language(data):
     return language
 
 
+def extract_youtube_video_id(value):
+    """Return a YouTube video ID from a URL or raw 11-character ID."""
+    youtube_url = str(value).strip()
+
+    if YOUTUBE_ID_PATTERN.fullmatch(youtube_url):
+        return youtube_url
+
+    youtube_hosts = (
+        "youtube.com",
+        "www.youtube.com",
+        "m.youtube.com",
+        "music.youtube.com",
+        "youtu.be",
+    )
+
+    if "://" not in youtube_url and youtube_url.lower().startswith(youtube_hosts):
+        youtube_url = f"https://{youtube_url}"
+
+    parsed_url = urlparse(youtube_url)
+    host = parsed_url.netloc.lower().removeprefix("www.")
+    path_parts = [part for part in parsed_url.path.split("/") if part]
+
+    if host in {"youtube.com", "m.youtube.com", "music.youtube.com"}:
+        query_video_id = parse_qs(parsed_url.query).get("v", [""])[0]
+
+        if YOUTUBE_ID_PATTERN.fullmatch(query_video_id):
+            return query_video_id
+
+        if len(path_parts) >= 2 and path_parts[0] in {"embed", "shorts", "live"}:
+            candidate = path_parts[1]
+
+            if YOUTUBE_ID_PATTERN.fullmatch(candidate):
+                return candidate
+
+    if host == "youtu.be" and path_parts:
+        candidate = path_parts[0]
+
+        if YOUTUBE_ID_PATTERN.fullmatch(candidate):
+            return candidate
+
+    return None
+
+
 @app.route("/")
 def home():
     """Show the chatbot page."""
@@ -33,13 +80,17 @@ def home():
 
 @app.route("/load_video", methods=["POST"])
 def load_video_route():
-    """Load one YouTube video and prepare it for questions."""
+    """Fetch one YouTube transcript and prepare it for questions."""
     data = request.get_json(silent=True) or {}
-    video_id = data.get("video_id", "").strip()
+    youtube_url = str(data.get("youtube_url", data.get("video_id", "")) or "").strip()
+    video_id = extract_youtube_video_id(youtube_url)
     language = get_requested_language(data)
 
-    if not video_id:
-        return jsonify({"error": "Please enter a video ID."}), 400
+    if not youtube_url:
+        return jsonify({"error": "Please paste a YouTube URL."}), 400
+
+    if video_id is None:
+        return jsonify({"error": "Please paste a valid YouTube URL."}), 400
 
     if language is None:
         return jsonify({"error": "Please select a supported language."}), 400
@@ -51,6 +102,7 @@ def load_video_route():
         logger.warning("Failed to load video_id=%s: %s", video_id, result.get("message"))
         return jsonify({"error": result.get("message")}), 400
 
+    result["video_id"] = video_id
     logger.info("Loaded video_id=%s with %s chunks", video_id, result.get("chunks"))
     return jsonify(result)
 

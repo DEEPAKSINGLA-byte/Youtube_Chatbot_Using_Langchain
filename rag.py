@@ -147,31 +147,53 @@ def ask_question(question, language=DEFAULT_LANGUAGE):
     }
 
 
-def get_transcript_text(video_id, language=DEFAULT_LANGUAGE):
+def get_transcript_text(video_id, language=DEFAULT_LANGUAGE, max_retries=10):
     """Download a transcript in the selected language and turn it into plain text."""
     clear_broken_proxy_settings()
 
-    youtube = YouTubeTranscriptApi()
-    transcript_list = youtube.list(video_id)
+    import time
 
-    try:
-        transcript = transcript_list.find_transcript([language])
-    except NoTranscriptFound:
-        if language == DEFAULT_LANGUAGE:
+    for attempt in range(max_retries):
+        try:
+            import requests
+            
+            # Use a custom session with a browser User-Agent to prevent 
+            # YouTube from dropping the connection prematurely.
+            session = requests.Session()
+            session.headers.update({
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            })
+            
+            youtube = YouTubeTranscriptApi(http_client=session)
+            transcript_list = youtube.list(video_id)
+
+            try:
+                transcript = transcript_list.find_transcript([language])
+            except NoTranscriptFound:
+                if language == DEFAULT_LANGUAGE:
+                    raise
+
+                transcript = transcript_list.find_transcript([DEFAULT_LANGUAGE]).translate(language)
+                logger.info(
+                    "Using translated transcript for video_id=%s from=%s to=%s",
+                    video_id,
+                    DEFAULT_LANGUAGE,
+                    language,
+                )
+
+            transcript_parts = transcript.fetch()
+            logger.info("Fetched transcript for video_id=%s language=%s", video_id, language)
+
+            return " ".join(part.text for part in transcript_parts)
+        except (NoTranscriptFound, TranscriptsDisabled):
             raise
-
-        transcript = transcript_list.find_transcript([DEFAULT_LANGUAGE]).translate(language)
-        logger.info(
-            "Using translated transcript for video_id=%s from=%s to=%s",
-            video_id,
-            DEFAULT_LANGUAGE,
-            language,
-        )
-
-    transcript_parts = transcript.fetch()
-    logger.info("Fetched transcript for video_id=%s language=%s", video_id, language)
-
-    return " ".join(part.text for part in transcript_parts)
+        except Exception as e:
+            if attempt == max_retries - 1:
+                logger.error("Failed to fetch transcript for video_id=%s after %d attempts: %s", video_id, max_retries, e)
+                raise
+            sleep_time = 2 * (attempt + 1)
+            logger.warning("Attempt %d failed for video_id=%s: %s. Retrying in %d seconds...", attempt + 1, video_id, e, sleep_time)
+            time.sleep(sleep_time)
 
 
 def clear_broken_proxy_settings():

@@ -1,4 +1,4 @@
-const videoInput = document.getElementById("video");
+const youtubeUrlInput = document.getElementById("youtube-url");
 const questionInput = document.getElementById("question");
 const languageInput = document.getElementById("language");
 const loadButton = document.getElementById("load-btn");
@@ -10,35 +10,35 @@ let loadedVideoLanguage = null;
 
 
 async function loadVideo() {
-    const videoId = videoInput.value.trim();
+    const youtubeUrl = youtubeUrlInput.value.trim();
 
-    if (videoId === "") {
-        statusBox.innerText = "Please enter a video ID.";
+    if (youtubeUrl === "") {
+        statusBox.innerText = "Please paste a YouTube URL.";
         return;
     }
 
-    setButtonState(loadButton, true, "Loading...");
-    statusBox.innerText = "Loading video...";
+    setButtonState(loadButton, true, "Fetching...");
+    statusBox.innerText = "Fetching transcript...";
     chatBox.innerHTML = "";
 
     try {
         const response = await fetchJson("/load_video", {
-            video_id: videoId,
+            youtube_url: youtubeUrl,
             language: languageInput.value
         });
 
         if (!response.ok) {
-            statusBox.innerText = response.data.error || "Unable to load video.";
+            statusBox.innerText = response.data.error || "Unable to fetch transcript.";
             return;
         }
 
         showVideoStatus(response.data);
     }
     catch (error) {
-        statusBox.innerText = "Something went wrong while loading the video.";
+        statusBox.innerText = "Something went wrong while fetching the transcript.";
     }
     finally {
-        setButtonState(loadButton, false, "Load Video");
+        setButtonState(loadButton, false, "Fetch transcript");
     }
 }
 
@@ -52,7 +52,7 @@ async function askQuestion() {
     }
 
     if (loadedVideoLanguage !== languageInput.value) {
-        addMessage("bot", "Please load the video again for the selected language.");
+        addMessage("bot", "Please fetch the transcript again for the selected language.");
         return;
     }
 
@@ -208,6 +208,6 @@ loadButton.addEventListener("click", loadVideo);
 askButton.addEventListener("click", askQuestion);
 languageInput.addEventListener("change", () => {
     loadedVideoLanguage = null;
-    statusBox.innerText = "Load the video for the selected language.";
+    statusBox.innerText = "Fetch the transcript for the selected language.";
     chatBox.innerHTML = "";
 });
